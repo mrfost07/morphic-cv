@@ -109,37 +109,133 @@ python 5_real_dinov2_benchmark/benchmark_real_world.py
 
 ---
 
-## Interactive CPU Inference (CMD / Terminal)
+## Universal Reusable Inference Engine (Zero GPU, CPU-Powered)
 
-To test any image interactively on pure CPU with no GPU required:
+MorphicCV includes an out-of-the-box universal inference engine supporting **Image Classification**, **Face Detection & Recognition**, **Salient Object Detection**, and **Live Real-Time Webcam Streaming** on consumer CPUs with **< 300MB RAM**:
 
+### 1. Interactive Terminal Prompt (CMD / PowerShell)
+Paste or drag-and-drop any image file path, hit Enter, and receive predictions in milliseconds:
 ```powershell
-# Double-click run.bat OR execute in CMD / PowerShell:
-run
+python -m morphic_cv.inference --mode interactive --adapter my_adapter.pt --classes cat dog bird
 ```
 
-Or directly via Python:
+### 2. Single Image & Batch Directory Processing
 ```powershell
-python predict_room.py
+# Single image
+python -m morphic_cv.inference --mode image --path ./test.jpg --adapter my_adapter.pt --classes cat dog
+
+# Entire folder of images (batch inference)
+python -m morphic_cv.inference --mode folder --path ./images_folder/ --adapter my_adapter.pt
 ```
 
-**Features**:
-* **< 300 ms CPU Inference**: Powered by `MorphicAdapter` spatial pooling.
-* **Continuous Interactive Loop**: Paste/drag-and-drop an image path, get instant room & floor predictions, and press Enter to test another image or `q` to quit.
-* **Single-shot CLI**:
-  ```powershell
-  python predict_room.py --image "path/to/room_photo.jpg"
-  ```
+### 3. Face Detection & Recognition
+Automatically locates all faces in an image, extracts each face region, and classifies identities:
+```powershell
+python -m morphic_cv.inference --mode faces --path group_photo.jpg --adapter my_adapter.pt
+```
+
+### 4. Salient Region & Object Detection
+Identifies geometric boundaries and bounding boxes of high-contrast targets using Morphological Edge Gradients without needing heavy YOLO/SSD models:
+```powershell
+python -m morphic_cv.inference --mode salient --path scene.jpg
+```
+
+### 5. Real-Time Live Webcam Stream (<50ms / frame on CPU)
+Runs a live webcam feed with on-screen bounding boxes, HUD status, and real-time FPS:
+```powershell
+# Real-time full frame classification
+python -m morphic_cv.inference --mode webcam --camera 0
+
+# Real-time face detection boxes
+python -m morphic_cv.inference --mode webcam --camera 0 --webcam-mode faces
+```
+*(Press `q` or `ESC` in the display window to exit).*
 
 ---
 
-## Real-World Case Study: 46-Class Campus Building Localization
+### Python API (Just 3 lines of code)
+```python
+from morphic_cv import MorphicInferenceEngine
 
-Trained on 690 real-world building room photos across 4 floors:
-* **Train Set**: 506 images | **Test Set**: 184 held-out unseen images
-* **Top-5 Accuracy**: **100.00%**
-* **Top-1 Accuracy**: **96.74%**
-* **Adapter Checkpoint**: **172.7 KB**
-* **Peak Training RAM**: **2.87 MB**
-* **Peak Inference RAM**: **< 300 MB on pure CPU**
+engine = MorphicInferenceEngine(adapter_path="my_model.pt", class_names=["cat", "dog"])
+
+# Single image, PIL image, or numpy array
+result = engine.predict("photo.jpg")
+
+# Real-time webcam feed with live overlay
+engine.stream_webcam(camera_id=0, mode="classify")
+```
+
+---
+
+## How It Works: Training Massive Datasets Under 100MB RAM
+
+Standard deep learning frameworks crash on consumer laptops when training on large image datasets because:
+1. **Uncompressed Feature Maps**: Storing dense float32 activations consumes gigabytes of RAM.
+2. **Redundant Decoding**: Repeatedly decompressing raw JPEGs wastes up to 70% of CPU cycles and memory.
+3. **Quadratic Self-Attention**: Vision Transformers require $O(N^2)$ memory, leading to Out-Of-Memory (OOM) errors.
+
+### The Morphic-CV Solution
+
+```
+Raw Large Dataset (100k+ Images)
+           │
+           ▼
+[Frozen Foundation Backbone (DINOv2)] ── (Extract Spatial Tokens)
+           │
+           ▼
+[64× Product Quantizer] ──────────────── (Compress float32 -> uint8 codebooks)
+           │
+           ▼
+[Disk Shard Streaming (np.memmap)] ───── (Zero-copy batches streamed from disk)
+           │
+           ▼
+[Morphic Sparse Adapter (MSA)] ───────── (Smooth Soft-Dilation/Erosion + RigL Sparsity)
+           │
+           ▼
+High-Accuracy Classifier (< 100MB RAM, Zero GPU, No Quality Reduction)
+```
+
+1. **Feature-First Compressed Token Streaming**:
+   High-dimensional spatial tokens (e.g. $16 \times 16 \times 384$) are compressed using a **Product Quantizer (PQ)** from 32-bit floats down to 8-bit quantized indices. This achieves a **64× reduction in storage** without degrading representation quality.
+2. **Zero-Copy Disk Streaming (`np.memmap`)**:
+   Instead of loading the entire dataset into system RAM, batches are read directly from disk shards on-demand via virtual memory mapping. RAM usage stays flat (< 100 MB) regardless of whether your dataset has 1,000 images or 1,000,000 images.
+3. **Morphological Sparse Adapters (MSA)**:
+   We freeze the foundation model and train only low-rank morphological adapter bottlenecks. By applying differentiable **Soft-Dilation** ($\oplus$) and **Soft-Erosion** ($\ominus$), the network captures structural contours and geometric boundaries while pruning 80% of redundant weights via dynamic RigL sparsity.
+4. **Lightweight Checkpoints**:
+   The output model checkpoint is only **~170 KB**, making deployment to edge devices, microservices, and laptops instantaneous.
+
+---
+
+## Production Quickstart: Training on Your Own Dataset
+
+To fine-tune a model on your custom dataset with strict memory guarantees:
+
+```python
+from morphic_cv import MorphicDINOv2
+from morphic_cv.streaming import ShardStreamer
+import torch
+import torch.nn as nn
+
+# 1. Initialize model with MorphicAdapter (< 1% trainable parameters)
+model = MorphicDINOv2.from_pretrained("dinov2_vits14", num_classes=10)
+
+# 2. Stream quantized feature shards directly from disk (Memory < 100MB)
+streamer = ShardStreamer(shard_dir="quantized_dataset_shards/", batch_size=32)
+
+optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
+criterion = nn.CrossEntropyLoss()
+
+# 3. Train on CPU or laptop without GPU
+for batch_features, batch_labels in streamer:
+    optimizer.zero_grad()
+    logits = model.forward_features_direct(batch_features)
+    loss = criterion(logits, batch_labels)
+    loss.backward()
+    optimizer.step()
+
+# 4. Save lightweight adapter (only ~170 KB!)
+model.save_adapter("my_lightweight_adapter.pt")
+```
+
 

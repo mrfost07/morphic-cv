@@ -134,6 +134,42 @@ for batch_codes, batch_labels in loader:
 
 ---
 
+### Recipe 4: Universal Production Inference Engine (Images, Faces, Salient Objects, & Live Webcam)
+Deploy any trained MorphicCV adapter for real-time inference on a consumer laptop CPU without requiring a GPU or large runtime dependencies:
+
+```python
+from morphic_cv import MorphicInferenceEngine
+
+# 1. Initialize engine on CPU (<300MB RAM)
+engine = MorphicInferenceEngine(
+    model_name="dinov2_vits14",
+    adapter_path="my_custom_morphic_adapter.pt",
+    class_names=["cat", "dog", "bird"],
+    device="cpu"
+)
+
+# 2. Predict on a single image (path, PIL Image, or numpy array)
+result = engine.predict("sample.jpg", return_probs=True)
+print(f"Predicted: {result['label']} ({result['confidence']:.2f}%) in {result['latency_ms']:.1f}ms")
+
+# 3. Detect and classify all faces in a photo
+faces = engine.detect_faces("group_photo.jpg")
+for f in faces:
+    print(f"Face at {f['bbox']} -> {f['label']} ({f['confidence']:.1f}%)")
+
+# 4. Detect salient objects/regions using Morphological Gradients
+objects = engine.detect_salient_objects("scene.jpg")
+for obj in objects:
+    print(f"Object at {obj['bbox']} -> {obj['label']} ({obj['confidence']:.1f}%)")
+
+# 5. Real-time live camera / webcam stream on pure CPU (with HUD overlay)
+# Press 'q' or 'ESC' in the window to stop
+engine.stream_webcam(camera_id=0, mode="classify")  # or mode="faces" / "salient"
+```
+
+
+---
+
 ## 4. Command-Line Interface (CLI)
 
 MorphicCV comes with a built-in terminal CLI:

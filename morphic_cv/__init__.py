@@ -13,6 +13,7 @@ from .adapters.msa import MorphicAdapter
 from .models.dinov2 import MorphicDINOv2
 from .streaming.quantizer import ProductQuantizer
 from .streaming.shard import TokenShardWriter, StreamingTokenDataset
+from .inference.engine import MorphicInferenceEngine
 
 __all__ = [
     "__version__",
@@ -26,4 +27,5 @@ __all__ = [
     "ProductQuantizer",
     "TokenShardWriter",
     "StreamingTokenDataset",
+    "MorphicInferenceEngine",
 ]

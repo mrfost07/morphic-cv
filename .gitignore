@@ -39,5 +39,14 @@ data/
 *.npy
 demo_shards/
 
+# Private/Thesis testing experiments
+thesis_*
+predict_room.py
+run.bat
+run_detector.bat
+audit_room_*
+audit_predictions_*
+building_features_cache.pt
+
 # Temporary visual outputs
 routed_output.png
