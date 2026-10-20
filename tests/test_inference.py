@@ -68,3 +68,25 @@ def test_engine_salient_objects():
         box = detections[0]["bbox"]
         assert len(box) == 4
         assert detections[0]["label"] == "object"
+
+
+def test_engine_face_swap():
+    engine = MorphicInferenceEngine(
+        model_name="dinov2_vits14",
+        class_names=["face"],
+        device="cpu"
+    )
+    # Synthetic user frame and celebrity frame
+    user_frame = np.full((320, 320, 3), 160, dtype=np.uint8)
+    celeb_frame = np.full((180, 180, 3), 210, dtype=np.uint8)
+
+    # Test enrolling celebrity
+    success = engine.enroll_celebrity("brad_pitt", celeb_frame)
+    assert success is True
+    assert "brad_pitt" in engine.celebrity_bank
+
+    # Test swap_face
+    swapped = engine.swap_face(user_frame, "brad_pitt")
+    assert isinstance(swapped, np.ndarray)
+    assert swapped.shape == (320, 320, 3)
+

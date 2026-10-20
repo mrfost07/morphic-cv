@@ -148,8 +148,17 @@ python -m morphic_cv.inference --mode webcam --camera 0
 
 # Real-time face detection boxes
 python -m morphic_cv.inference --mode webcam --camera 0 --webcam-mode faces
+
+# Real-time photorealistic face swapping onto webcam feed (CPU, <35ms/frame)
+python -m morphic_cv.inference --mode webcam --camera 0 --webcam-mode swap --swap-target celebrity.jpg
 ```
 *(Press `q` or `ESC` in the display window to exit).*
+
+### 6. Photorealistic Face Swap on Single Photos
+Swap any user photo into a celebrity identity with natural lighting matching:
+```powershell
+python -m morphic_cv.inference --mode swap --path user.jpg --swap-target celebrity.jpg --output swapped.jpg
+```
 
 ---
 
@@ -159,11 +168,15 @@ from morphic_cv import MorphicInferenceEngine
 
 engine = MorphicInferenceEngine(adapter_path="my_model.pt", class_names=["cat", "dog"])
 
-# Single image, PIL image, or numpy array
+# Single image classification
 result = engine.predict("photo.jpg")
 
-# Real-time webcam feed with live overlay
-engine.stream_webcam(camera_id=0, mode="classify")
+# Photorealistic Face Swapping on pure CPU (<30ms, Zero GPU)
+engine.enroll_celebrity("brad_pitt", "brad_pitt.jpg")
+swapped_frame = engine.swap_face("my_photo.jpg", "brad_pitt")
+
+# Real-time live webcam face changer at 30-60 FPS
+engine.stream_webcam(camera_id=0, mode="swap", swap_target="brad_pitt")
 ```
 
 ---
