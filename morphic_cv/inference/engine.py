@@ -80,6 +80,10 @@ class MorphicInferenceEngine:
         # In-memory bank for enrolled celebrities / identities (<50KB per identity)
         self.celebrity_bank: Dict[str, np.ndarray] = {}
 
+        # Temporal smoothing state to eliminate face flickering/blinking
+        self._smooth_face_box = None
+        self._face_miss_count = 0
+
     def _get_face_cascade(self):
         if self._face_cascade is None:
             import cv2
@@ -322,38 +326,79 @@ class MorphicInferenceEngine:
                 self.celebrity_bank[target] = celeb_bgr
 
         # Detect user face in live frame
+        H, W = frame_bgr.shape[:2]
         gray_frame = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
-        user_faces = self._get_face_cascade().detectMultiScale(gray_frame, 1.1, 5, minSize=(60, 60))
-        if len(user_faces) == 0:
-            return frame_bgr
+        gray_frame = cv2.equalizeHist(gray_frame)
+        user_faces = self._get_face_cascade().detectMultiScale(gray_frame, 1.1, 4, minSize=(70, 70))
 
-        ux, uy, uw, uh = user_faces[0]
+        if len(user_faces) > 0:
+            # Track largest face on screen
+            user_faces = sorted(user_faces, key=lambda b: b[2] * b[3], reverse=True)
+            target_box = np.array(user_faces[0], dtype=np.float32)
+            if self._smooth_face_box is None:
+                self._smooth_face_box = target_box
+            else:
+                # Exponential Moving Average (EMA) smoothing to completely eliminate jitter
+                self._smooth_face_box = 0.55 * target_box + 0.45 * self._smooth_face_box
+            self._face_miss_count = 0
+        else:
+            # Face missed in this frame: retain last known box for up to 10 frames (~330ms) to stop blinking
+            if self._smooth_face_box is not None and self._face_miss_count < 10:
+                self._face_miss_count += 1
+            else:
+                self._smooth_face_box = None
+                return frame_bgr
+
+        # Use smoothed face box
+        s_box = self._smooth_face_box.astype(int)
+        ux, uy, uw, uh = s_box[0], s_box[1], s_box[2], s_box[3]
+
+        # Expand box slightly (5% horizontal, 10% vertical) for natural forehead and chin coverage
+        pad_x = int(uw * 0.05)
+        pad_y = int(uh * 0.10)
+        ux = max(2, ux - pad_x)
+        uy = max(2, uy - pad_y)
+        uw = min(W - ux - 2, uw + 2 * pad_x)
+        uh = min(H - uy - 2, uh + 2 * pad_y)
+
+        if uw <= 10 or uh <= 10:
+            return frame_bgr
 
         # 1. Resize celebrity face to user face box
         target_resized = cv2.resize(celeb_bgr, (uw, uh), interpolation=cv2.INTER_LINEAR)
         user_crop = frame_bgr[uy:uy + uh, ux:ux + uw]
 
-        # 2. Photometric lighting and skin tone matching
+        # 2. Photometric lighting and skin tone matching in LAB space
         color_matched = self._color_transfer_fast(user_crop, target_resized)
 
-        # 3. Create feathered morphological elliptical mask
+        # 3. Create full natural elliptical face mask
         mask = np.zeros((uh, uw), dtype=np.uint8)
         center_mask = (uw // 2, uh // 2)
-        axes = (int(uw * 0.42), int(uh * 0.48))
+        axes = (int(uw * 0.46), int(uh * 0.50))
         cv2.ellipse(mask, center_mask, axes, 0, 0, 360, 255, -1)
-        mask = cv2.GaussianBlur(mask, (15, 15), 10)
+        # Heavy Gaussian blur for seamless boundary transition
+        mask = cv2.GaussianBlur(mask, (35, 35), 18)
 
-        # 4. Seamless Poisson gradient clone
-        center_frame = (ux + uw // 2, uy + uh // 2)
-        try:
-            swapped = cv2.seamlessClone(color_matched, frame_bgr, mask, center_frame, cv2.NORMAL_CLONE)
-            return swapped
-        except Exception:
-            mask_3c = np.repeat(mask[:, :, np.newaxis] / 255.0, 3, axis=2)
-            frame_bgr[uy:uy + uh, ux:ux + uw] = (
-                color_matched * mask_3c + user_crop * (1.0 - mask_3c)
-            ).astype(np.uint8)
-            return frame_bgr
+        # 4. Safe Seamless Poisson gradient clone
+        min_cx = uw // 2 + 2
+        max_cx = W - uw // 2 - 2
+        min_cy = uh // 2 + 2
+        max_cy = H - uh // 2 - 2
+
+        if min_cx < max_cx and min_cy < max_cy:
+            cx = int(np.clip(ux + uw // 2, min_cx, max_cx))
+            cy = int(np.clip(uy + uh // 2, min_cy, max_cy))
+            try:
+                swapped = cv2.seamlessClone(color_matched, frame_bgr, mask, (cx, cy), cv2.NORMAL_CLONE)
+                return swapped
+            except Exception:
+                pass
+
+        # Fallback feathered alpha blending if seamlessClone cannot run
+        mask_3c = np.repeat(mask[:, :, np.newaxis].astype(np.float32) / 255.0, 3, axis=2)
+        blended_crop = (color_matched.astype(np.float32) * mask_3c + user_crop.astype(np.float32) * (1.0 - mask_3c)).astype(np.uint8)
+        frame_bgr[uy:uy + uh, ux:ux + uw] = blended_crop
+        return frame_bgr
 
     def detect_salient_objects(
         self,
@@ -433,10 +478,21 @@ class MorphicInferenceEngine:
         """
         import cv2
 
-        cap = cv2.VideoCapture(camera_id)
+        # Robust camera opening: use DirectShow on Windows to avoid MSMF error -1072873822
+        if sys.platform == "win32":
+            cap = cv2.VideoCapture(camera_id, cv2.CAP_DSHOW)
+            if not cap.isOpened():
+                cap = cv2.VideoCapture(camera_id)
+        else:
+            cap = cv2.VideoCapture(camera_id)
+
         if not cap.isOpened():
-            print(f"[Error] Could not open camera {camera_id}.")
-            return
+            # Try camera 1 if external camera is connected
+            print(f"[Warning] Camera {camera_id} not available. Attempting camera 1...")
+            cap = cv2.VideoCapture(1, cv2.CAP_DSHOW if sys.platform == "win32" else 0)
+            if not cap.isOpened():
+                print(f"[Error] Could not open camera {camera_id} or camera 1. Please check camera connections.")
+                return
 
         print("\n" + "=" * 65)
         print("  MORPHIC-CV: LIVE REAL-TIME CAMERA INFERENCE (CPU)")
@@ -451,11 +507,18 @@ class MorphicInferenceEngine:
 
         prev_time = time.time()
         fps = 0.0
+        consecutive_drops = 0
 
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
-                break
+                consecutive_drops += 1
+                if consecutive_drops > 25:  # Over ~800ms of lost camera frames
+                    print("\n[Warning] Camera signal lost. Stopping stream.")
+                    break
+                time.sleep(0.02)
+                continue
+            consecutive_drops = 0
 
             h, w = frame.shape[:2]
             curr_time = time.time()
