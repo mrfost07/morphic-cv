@@ -25,6 +25,11 @@ Usage examples:
 import argparse
 import os
 import sys
+import warnings
+
+warnings.filterwarnings("ignore")
+os.environ["PYTHONWARNINGS"] = "ignore"
+
 from morphic_cv.inference.engine import MorphicInferenceEngine
 
 

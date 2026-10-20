@@ -4,7 +4,7 @@ Combines Differentiable Mathematical Morphology, Dynamic Sparse Training,
 GigaPixel Saliency Routing, and Foundation Model Adapters.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 from .morphology.ops import SoftDilation2d, SoftErosion2d, MorphologicalGradient2d
 from .morphology.rigl import RigLScheduler

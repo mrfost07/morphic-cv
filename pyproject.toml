@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "morphic-cv"
-version = "0.1.0"
+version = "0.1.1"
 description = "Next-Generation Lightweight Computer Vision Research Suite (<8GB RAM)"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -31,6 +31,7 @@ dependencies = [
 
 [project.scripts]
 morphic-cv = "morphic_cv.cli.main:main"
+morphic-inference = "morphic_cv.inference.__main__:main"
 
 [tool.setuptools.packages.find]
 include = ["morphic_cv*"]
