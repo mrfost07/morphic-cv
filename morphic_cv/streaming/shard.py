@@ -82,7 +82,8 @@ class StreamingTokenDataset(Dataset):
 
     def __getitem__(self, idx: int):
         codes = torch.from_numpy(self.mmap_codes[idx].copy())
-        label = torch.from_numpy(self.labels[idx].copy())
+        lbl = self.labels[idx]
+        label = torch.tensor(lbl) if np.isscalar(lbl) else torch.from_numpy(lbl.copy())
         return codes, label
 
     def dequantize_batch(self, batch_codes: torch.Tensor) -> torch.Tensor:

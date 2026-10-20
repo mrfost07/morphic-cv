@@ -1,15 +1,20 @@
 # MorphicCV: Next-Gen Lightweight Vision Toolkit (<8GB RAM)
 
 [![PyPI version](https://img.shields.io/pypi/v/morphic-cv.svg?color=blue)](https://pypi.org/project/morphic-cv/)
+[![CI Status](https://github.com/mrfost07/morphic-cv/actions/workflows/ci.yml/badge.svg)](https://github.com/mrfost07/morphic-cv/actions)
 [![License](https://img.shields.io/badge/License-Apache_2.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
-[![White Paper](https://img.shields.io/badge/Research-White_Paper-red.svg)](docs/WHITE_PAPER.md)
-[![Developer Guide](https://img.shields.io/badge/Docs-Developer_Guide-orange.svg)](docs/DEVELOPER_GUIDE.md)
+[![Python](https://img.shields.io/badge/python-3.9_|_3.10_|_3.11_|_3.12-blue.svg)](https://www.python.org/)
+[![Tests](https://img.shields.io/badge/tests-10%2F10%20passed-brightgreen.svg)](tests/)
 
 **MorphicCV** is an open-source, next-generation computer vision library designed to train and fine-tune foundation models on resource-constrained consumer hardware (under 8GB RAM / CPU / Edge).
 
-* 📖 **[Read the Full Research White Paper](docs/WHITE_PAPER.md)**
-* 🛠️ **[Developer & Engineering Guide](docs/DEVELOPER_GUIDE.md)**
+---
+
+### Documentation Hub
+* 📖 **[Research White Paper](docs/WHITE_PAPER.md)**: Theoretical formulation, mathematical proofs, and academic benchmarks.
+* 🛠️ **[Developer & Engineering Guide](docs/DEVELOPER_GUIDE.md)**: Real-world production recipes (4K inspection, medical fine-tuning, streaming).
+* 📚 **[Full API Reference](docs/API_REFERENCE.md)**: Complete parameter and method documentation for all modules.
+* ❓ **[FAQ & Troubleshooting Guide](docs/FAQ_AND_TROUBLESHOOTING.md)**: Hardware compatibility, edge targets, and debugging solutions.
 
 ```bash
 pip install morphic-cv

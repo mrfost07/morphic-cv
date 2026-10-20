@@ -83,7 +83,7 @@ class MorphicDINOv2(nn.Module):
 
     def load_adapter(self, load_path: str):
         """Loads saved adapter and classifier weights."""
-        state_dict = torch.load(load_path, map_location='cpu')
+        state_dict = torch.load(load_path, map_location='cpu', weights_only=False)
         self.adapter.load_state_dict(state_dict["adapter"])
         self.classifier.load_state_dict(state_dict["classifier"])
         print(f"Adapter loaded successfully from: {load_path}")
