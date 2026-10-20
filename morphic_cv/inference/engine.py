@@ -92,7 +92,23 @@ class MorphicInferenceEngine:
         if isinstance(image_input, str):
             clean_path = image_input.strip().strip('"').strip("'")
             if not os.path.exists(clean_path):
-                raise FileNotFoundError(f"Image not found at path: {clean_path}")
+                # Smart resolution: check user's Downloads, Desktop, Pictures, and home
+                home = os.path.expanduser("~")
+                candidates = [
+                    os.path.join(home, "Downloads", clean_path),
+                    os.path.join(home, "Desktop", clean_path),
+                    os.path.join(home, "Pictures", clean_path),
+                    os.path.join(home, clean_path),
+                    os.path.join(os.getcwd(), clean_path),
+                ]
+                found = False
+                for c in candidates:
+                    if os.path.exists(c):
+                        clean_path = c
+                        found = True
+                        break
+                if not found:
+                    raise FileNotFoundError(f"Image not found at path: {clean_path}")
             return Image.open(clean_path).convert("RGB")
         elif isinstance(image_input, Image.Image):
             return image_input.convert("RGB")
@@ -302,6 +318,8 @@ class MorphicInferenceEngine:
                 t_pad_w, t_pad_h = int(tw * 0.15), int(th * 0.15)
                 celeb_bgr = celeb_bgr[max(0, ty - t_pad_h):min(celeb_bgr.shape[0], ty + th + t_pad_h),
                                       max(0, tx - t_pad_w):min(celeb_bgr.shape[1], tx + tw + t_pad_w)]
+            if isinstance(target, str):
+                self.celebrity_bank[target] = celeb_bgr
 
         # Detect user face in live frame
         gray_frame = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
@@ -425,6 +443,9 @@ class MorphicInferenceEngine:
         print(f"  Mode: {mode.upper()} | Camera ID: {camera_id}")
         if mode == "swap" and swap_target is not None:
             print(f"  Swap Target: {swap_target}")
+            if isinstance(swap_target, str) and swap_target not in self.celebrity_bank:
+                print("  [*] Enrolling target face into memory...")
+                self.enroll_celebrity(swap_target, swap_target)
         print("  Press 'q' or 'ESC' in the window to stop.")
         print("=" * 65 + "\n")
 
@@ -445,7 +466,8 @@ class MorphicInferenceEngine:
                 if swap_target is not None:
                     frame = self.swap_face(frame, swap_target)
                 cv2.rectangle(frame, (0, 0), (w, 50), (20, 20, 20), -1)
-                text = f"MorphicCV Face Swap: {str(swap_target).upper()} (CPU, Zero GPU)"
+                display_name = os.path.splitext(os.path.basename(str(swap_target)))[0].replace("_", " ").upper()
+                text = f"MorphicCV Face Swap: {display_name} (CPU, Zero GPU)"
                 cv2.putText(frame, text, (20, 32), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 180), 2)
 
             elif mode == "faces":
