@@ -1,0 +1,2 @@
+[console_scripts]
+morphic-cv = morphic_cv.cli.main:main

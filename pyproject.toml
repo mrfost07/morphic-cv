@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "morphic-cv"
+version = "0.1.0"
+description = "Next-Generation Lightweight Computer Vision Research Suite (<8GB RAM)"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "MorphicCV Contributors"}
+]
+keywords = [
+    "computer-vision",
+    "differentiable-morphology",
+    "sparsity",
+    "rigl",
+    "dinov2",
+    "peft",
+    "gigapixel",
+    "edge-ai"
+]
+dependencies = [
+    "torch>=2.0.0",
+    "torchvision>=0.15.0",
+    "numpy>=1.20.0",
+    "Pillow>=9.0.0"
+]
+
+[project.scripts]
+morphic-cv = "morphic_cv.cli.main:main"
+
+[tool.setuptools.packages.find]
+include = ["morphic_cv*"]
