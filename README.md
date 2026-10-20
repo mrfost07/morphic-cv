@@ -1,6 +1,14 @@
-# Next-Gen Lightweight Computer Vision Research Suite (<8GB RAM)
+# MorphicCV: Next-Gen Lightweight Vision Toolkit (<8GB RAM)
 
-This repository contains an end-to-end, high-impact research suite proving that **next-generation Computer Vision training does NOT require massive cloud GPU clusters**. 
+[![PyPI version](https://img.shields.io/pypi/v/morphic-cv.svg?color=blue)](https://pypi.org/project/morphic-cv/)
+[![License](https://img.shields.io/badge/License-Apache_2.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
+
+**MorphicCV** is an open-source, next-generation computer vision library designed to train and fine-tune foundation models on resource-constrained consumer hardware (under 8GB RAM / CPU / Edge).
+
+```bash
+pip install morphic-cv
+``` 
 
 By combining **Differentiable Mathematical Morphology**, **Dynamic Sparse Training (RigL)**, **Product-Quantized Spatial Streaming**, and **Foundation Model Token Adaptation**, this suite operates natively on a standard personal laptop under 8GB of RAM with CPU execution.
 
