@@ -3,8 +3,13 @@
 [![PyPI version](https://img.shields.io/pypi/v/morphic-cv.svg?color=blue)](https://pypi.org/project/morphic-cv/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
+[![White Paper](https://img.shields.io/badge/Research-White_Paper-red.svg)](docs/WHITE_PAPER.md)
+[![Developer Guide](https://img.shields.io/badge/Docs-Developer_Guide-orange.svg)](docs/DEVELOPER_GUIDE.md)
 
 **MorphicCV** is an open-source, next-generation computer vision library designed to train and fine-tune foundation models on resource-constrained consumer hardware (under 8GB RAM / CPU / Edge).
+
+* 📖 **[Read the Full Research White Paper](docs/WHITE_PAPER.md)**
+* 🛠️ **[Developer & Engineering Guide](docs/DEVELOPER_GUIDE.md)**
 
 ```bash
 pip install morphic-cv
