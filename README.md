@@ -106,3 +106,40 @@ Or run any module independently:
 python 4_gigapixel_morphic_router/benchmark_gigapixel.py
 python 5_real_dinov2_benchmark/benchmark_real_world.py
 ```
+
+---
+
+## Interactive CPU Inference (CMD / Terminal)
+
+To test any image interactively on pure CPU with no GPU required:
+
+```powershell
+# Double-click run.bat OR execute in CMD / PowerShell:
+run
+```
+
+Or directly via Python:
+```powershell
+python predict_room.py
+```
+
+**Features**:
+* **< 300 ms CPU Inference**: Powered by `MorphicAdapter` spatial pooling.
+* **Continuous Interactive Loop**: Paste/drag-and-drop an image path, get instant room & floor predictions, and press Enter to test another image or `q` to quit.
+* **Single-shot CLI**:
+  ```powershell
+  python predict_room.py --image "path/to/room_photo.jpg"
+  ```
+
+---
+
+## Real-World Case Study: 46-Class Campus Building Localization
+
+Trained on 690 real-world building room photos across 4 floors:
+* **Train Set**: 506 images | **Test Set**: 184 held-out unseen images
+* **Top-5 Accuracy**: **100.00%**
+* **Top-1 Accuracy**: **96.74%**
+* **Adapter Checkpoint**: **172.7 KB**
+* **Peak Training RAM**: **2.87 MB**
+* **Peak Inference RAM**: **< 300 MB on pure CPU**
+

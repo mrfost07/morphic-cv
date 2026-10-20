@@ -27,7 +27,7 @@ class SoftDilation2d(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, C, H, W = x.shape
         K2 = self.kernel_size * self.kernel_size
-        x_reshaped = x.view(B * C, 1, H, W)
+        x_reshaped = x.reshape(B * C, 1, H, W)
         patches = F.unfold(x_reshaped, kernel_size=self.kernel_size, padding=self.padding, stride=self.stride)
         H_out = (H + 2 * self.padding - self.kernel_size) // self.stride + 1
         W_out = (W + 2 * self.padding - self.kernel_size) // self.stride + 1
@@ -58,7 +58,7 @@ class SoftErosion2d(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, C, H, W = x.shape
         K2 = self.kernel_size * self.kernel_size
-        x_reshaped = x.view(B * C, 1, H, W)
+        x_reshaped = x.reshape(B * C, 1, H, W)
         patches = F.unfold(x_reshaped, kernel_size=self.kernel_size, padding=self.padding, stride=self.stride)
         H_out = (H + 2 * self.padding - self.kernel_size) // self.stride + 1
         W_out = (W + 2 * self.padding - self.kernel_size) // self.stride + 1
