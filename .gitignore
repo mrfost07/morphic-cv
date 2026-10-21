@@ -48,5 +48,11 @@ audit_room_*
 audit_predictions_*
 building_features_cache.pt
 
+# Ad-hoc testing images and outputs
+brad_pitt*
+swapped_*
+*_crop_test.*
+test_output*
+
 # Temporary visual outputs
 routed_output.png

@@ -172,11 +172,11 @@ engine = MorphicInferenceEngine(adapter_path="my_model.pt", class_names=["cat", 
 result = engine.predict("photo.jpg")
 
 # Photorealistic Face Swapping on pure CPU (<30ms, Zero GPU)
-engine.enroll_celebrity("brad_pitt", "brad_pitt.jpg")
-swapped_frame = engine.swap_face("my_photo.jpg", "brad_pitt")
+engine.enroll_celebrity("target_person", "reference_face.jpg")
+swapped_frame = engine.swap_face("my_photo.jpg", "target_person")
 
 # Real-time live webcam face changer at 30-60 FPS
-engine.stream_webcam(camera_id=0, mode="swap", swap_target="brad_pitt")
+engine.stream_webcam(camera_id=0, mode="swap", swap_target="target_person")
 ```
 
 ---
